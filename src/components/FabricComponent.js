@@ -29,6 +29,20 @@ const FabricComponent = () => {
       );
     }
 
+    fabricCanvas.on('object:moving', function (options) {
+      if (
+        Math.round((options.target.left / grid) * 4) % 4 == 0 &&
+        Math.round((options.target.top / grid) * 4) % 4 == 0
+      ) {
+        options.target
+          .set({
+            left: Math.round(options.target.left / grid) * grid,
+            top: Math.round(options.target.top / grid) * grid,
+          })
+          .setCoords();
+      }
+    });
+    console.log(JSON.stringify(fabricCanvas));
     return () => {
       fabricCanvas.dispose();
     };
@@ -60,6 +74,7 @@ const FabricComponent = () => {
     canvas.setActiveObject(textField);
     canvas.renderAll();
   };
+
   const dtEditText = (action) => {
     const a = action;
     const o = canvas.getActiveObject();
@@ -91,6 +106,43 @@ const FabricComponent = () => {
     canvas.renderAll();
   };
 
+  const handleStaticTextField = (caseName) => {
+    var textContent = 'default';
+
+    switch (caseName) {
+      case 'case1':
+        textContent = 'case1';
+        break;
+      case 'case2':
+        textContent = 'case2';
+        break;
+      default:
+        textContent = 'default';
+        break;
+    }
+
+    const StaticTextField = new fabric.IText(textContent, {
+      left: 5,
+      top: 5,
+      width: 200,
+      fontSize: 16,
+      borderColor: 'black',
+      editable: false,
+      lockMovementX: false,
+      lockMovementY: false,
+      selectable: true,
+    });
+    canvas.add(StaticTextField);
+    setTextFields((prevTextFields) => [...prevTextFields, StaticTextField]);
+    canvas.setActiveObject(StaticTextField);
+    canvas.renderAll();
+  };
+
+  const handleExportClick = () => {
+    const jsonData = JSON.stringify(canvas.toJSON());
+    console.log(jsonData);
+  };
+
   const dtGetStyle = (object, styleName) => {
     return object[styleName];
   };
@@ -114,6 +166,21 @@ const FabricComponent = () => {
         Italic
       </button>
       <button onClick={handleAddTextField}>new text Field</button>
+      <button onClick={handleExportClick}> Export Data</button>
+      <button
+        onClick={() => {
+          handleStaticTextField('case1');
+        }}
+      >
+        Case 1
+      </button>
+      <button
+        onClick={() => {
+          handleStaticTextField('case2');
+        }}
+      >
+        Case 2
+      </button>
     </div>
   );
 };
