@@ -1,10 +1,11 @@
 import './App.css';
 import FabricComponent from './components/FabricComponent';
-import EditableText from './components/FabricComponent';
+import ColorPalette from './components/ColorPallete';
 function App() {
   return (
     <div>
       <FabricComponent />
+      <ColorPalette />
     </div>
   );
 }

@@ -1,7 +1,7 @@
 /* eslint-disable default-case */
 import React, { useEffect, useRef, useState } from 'react';
 import { fabric } from 'fabric';
-
+import preloadImage from '../images/images.png';
 const FabricComponent = () => {
   const canvasRef = useRef(null);
   const [canvas, setCanvas] = useState(null);
@@ -143,6 +143,31 @@ const FabricComponent = () => {
     console.log(jsonData);
   };
 
+  const handleImageClick = () => {
+    const imgObj = new Image();
+    imgObj.src = preloadImage;
+    imgObj.onload = function () {
+      const image = new fabric.Image(imgObj);
+      image.set({
+        top: 50,
+        left: 50,
+      });
+      canvas.add(image);
+      canvas.renderAll();
+    };
+  };
+
+  const handleAddLine = () => {
+    const canvas = canvasRef.current;
+    const rect = new fabric.Rect({
+      left: 50,
+      top: 50,
+      width: canvas.width,
+      height: (canvas.height / 100) * 5,
+      fill: 'black',
+    });
+    canvas.add(rect);
+  };
   const dtGetStyle = (object, styleName) => {
     return object[styleName];
   };
@@ -155,7 +180,7 @@ const FabricComponent = () => {
 
   return (
     <div>
-      <canvas id="c" ref={canvasRef}></canvas>
+      <canvas id="c" width={500} height={500} ref={canvasRef}></canvas>
       <button onClick={() => dtEditText('underline')} id="btn-underline">
         Underline
       </button>
@@ -181,6 +206,8 @@ const FabricComponent = () => {
       >
         Case 2
       </button>
+      <button onClick={handleImageClick}>Add Image</button>
+      <button onClick={handleAddLine}>Add Line</button>
     </div>
   );
 };
