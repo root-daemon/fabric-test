@@ -6,14 +6,14 @@ import preloadImage from '../images/images.png';
 
 const FabricComponent = () => {
   const canvasRef = useRef(null);
+  const barcodeRef = useRef(null);
   const [canvas, setCanvas] = useState(null);
   const [textFields, setTextFields] = useState([]);
-  const [barcodeValue, setBarcodeValue] = useState('123123');
-
+  const [barcodeValue, setBarcodeValue] = useState('123456789');
+  const [barcodeImage, setBarcodeImage] = useState(null);
   useEffect(() => {
     const fabricCanvas = new fabric.Canvas(canvasRef.current);
     setCanvas(fabricCanvas);
-
     // Add text to canvas
     var grid = 50;
     // create grid
@@ -32,11 +32,11 @@ const FabricComponent = () => {
       );
     }
 
-    // Grid Snapping function
+    //Coditioning for the snapping funtion
     fabricCanvas.on('object:moving', function (options) {
       if (
-        Math.round((options.target.left / grid) * 4) % 4 === 0 &&
-        Math.round((options.target.top / grid) * 4) % 4 === 0
+        Math.round((options.target.left / grid) * 4) % 4 == 0 &&
+        Math.round((options.target.top / grid) * 4) % 4 == 0
       ) {
         options.target
           .set({
@@ -46,18 +46,46 @@ const FabricComponent = () => {
           .setCoords();
       }
     });
-
+    console.log(JSON.stringify(fabricCanvas));
     return () => {
       fabricCanvas.dispose();
+      barcodeRef.current = null;
     };
   }, []);
 
+  //Updating the barcode when the value changes
   useEffect(() => {
-    if (canvas) {
-      updateBarcode();
+    if (barcodeRef.current) {
+      JsBarcode(canvasRef.current, barcodeValue, barcodeRef.current.options);
+      if (canvas) {
+        canvas.renderAll();
+      }
     }
   }, [barcodeValue]);
 
+  //Generating the barcode
+  const handleGenerateBarcode = () => {
+    const barcodeOptions = {
+      format: 'CODE128',
+      displayValue: true,
+      lineColor: '#000000',
+      width: 2,
+      height: 100,
+      margin: 10,
+    };
+    const barcodeCanvas = document.createElement('canvas');
+    JsBarcode(canvasRef.current, barcodeValue, barcodeOptions);
+    const barcodeImageObject = new fabric.Image(barcodeCanvas, {
+      left: 5,
+      top: 5,
+      width: barcodeCanvas.width / 10,
+      height: barcodeCanvas.height / 10,
+      selectable: true,
+    });
+    setBarcodeImage(barcodeImageObject);
+    canvas.add(barcodeImageObject);
+    canvas.renderAll();
+  };
   const handleAddTextField = () => {
     const textField = new fabric.IText('Text', {
       left: 5,
@@ -117,7 +145,7 @@ const FabricComponent = () => {
   };
 
   const handleStaticTextField = (caseName) => {
-    let textContent = 'default';
+    var textContent = 'default';
 
     switch (caseName) {
       case 'case1':
@@ -131,7 +159,7 @@ const FabricComponent = () => {
         break;
     }
 
-    const staticTextField = new fabric.IText(textContent, {
+    const StaticTextField = new fabric.IText(textContent, {
       left: 5,
       top: 5,
       width: 200,
@@ -142,9 +170,9 @@ const FabricComponent = () => {
       lockMovementY: false,
       selectable: true,
     });
-    canvas.add(staticTextField);
-    setTextFields((prevTextFields) => [...prevTextFields, staticTextField]);
-    canvas.setActiveObject(staticTextField);
+    canvas.add(StaticTextField);
+    setTextFields((prevTextFields) => [...prevTextFields, StaticTextField]);
+    canvas.setActiveObject(StaticTextField);
     canvas.renderAll();
   };
 
@@ -168,6 +196,7 @@ const FabricComponent = () => {
   };
 
   const handleAddLine = () => {
+    const canvas = canvasRef.current;
     const rect = new fabric.Rect({
       left: 50,
       top: 50,
@@ -177,7 +206,6 @@ const FabricComponent = () => {
     });
     canvas.add(rect);
   };
-
   const dtGetStyle = (object, styleName) => {
     return object[styleName];
   };
@@ -188,28 +216,8 @@ const FabricComponent = () => {
     canvas.renderAll();
   };
 
-  const updateBarcode = () => {
-    canvas.forEachObject(function (object) {
-      if (object.type === 'image' && object.source === 'barcode') {
-        canvas.remove(object);
-      }
-    });
-
-    const barcodeOptions = {
-      format: 'CODE128',
-      displayValue: false,
-    };
-    const barcodeCanvas = document.createElement('canvas');
-    JsBarcode(barcodeCanvas, barcodeValue, barcodeOptions);
-
-    const barcodeImage = new fabric.Image(barcodeCanvas, {
-      left: 10,
-      top: 10,
-      source: 'barcode',
-    });
-
-    canvas.add(barcodeImage);
-    canvas.renderAll();
+  const handleInputChange = (event) => {
+    setBarcodeValue(event.target.value);
   };
 
   return (
@@ -224,17 +232,26 @@ const FabricComponent = () => {
       <button onClick={() => dtEditText('italic')} id="btn-italic">
         Italic
       </button>
-      <button onClick={handleAddTextField}>New Text Field</button>
-      <button onClick={handleExportClick}>Export Data</button>
-      <button onClick={() => handleStaticTextField('case1')}>Case 1</button>
-      <button onClick={() => handleStaticTextField('case2')}>Case 2</button>
+      <button onClick={handleAddTextField}>new text Field</button>
+      <button onClick={handleExportClick}> Export Data</button>
+      <button
+        onClick={() => {
+          handleStaticTextField('case1');
+        }}
+      >
+        Case 1
+      </button>
+      <button
+        onClick={() => {
+          handleStaticTextField('case2');
+        }}
+      >
+        Case 2
+      </button>
       <button onClick={handleImageClick}>Add Image</button>
       <button onClick={handleAddLine}>Add Line</button>
-      <input
-        type="text"
-        value={barcodeValue}
-        onChange={(e) => setBarcodeValue(e.target.value)}
-      />
+      <button onClick={handleGenerateBarcode}>Generate Barcode</button>
+      <input type="text" value={barcodeValue} onChange={handleInputChange} />
     </div>
   );
 };
