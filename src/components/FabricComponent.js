@@ -54,6 +54,13 @@ const FabricComponent = () => {
 
   useEffect(() => {
     if (canvas) {
+      canvas.forEachObject((object) => {
+        console.log('canvas', canvas);
+      });
+    }
+  }, [canvas]);
+  useEffect(() => {
+    if (canvas) {
       updateBarcode();
     }
   }, [barcodeValue]);
@@ -188,6 +195,9 @@ const FabricComponent = () => {
     canvas.renderAll();
   };
 
+  const handleAddBarcode = () => {
+    updateBarcode();
+  };
   const updateBarcode = () => {
     canvas.forEachObject(function (object) {
       if (object.type === 'image' && object.source === 'barcode') {
@@ -230,6 +240,7 @@ const FabricComponent = () => {
       <button onClick={() => handleStaticTextField('case2')}>Case 2</button>
       <button onClick={handleImageClick}>Add Image</button>
       <button onClick={handleAddLine}>Add Line</button>
+      <button onClick={handleAddBarcode}>Barcode</button>
       <input
         type="text"
         value={barcodeValue}
