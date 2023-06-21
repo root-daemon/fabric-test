@@ -1,4 +1,3 @@
-/* eslint-disable default-case */
 import { fabric } from 'fabric';
 import JsBarcode from 'jsbarcode';
 import React, { useEffect, useRef, useState } from 'react';
@@ -11,13 +10,14 @@ const FabricComponent = () => {
   const [barcodeValue, setBarcodeValue] = useState('123123');
 
   useEffect(() => {
-    const fabricCanvas = new fabric.Canvas(canvasRef.current);
+    const fabricCanvas = new fabric.Canvas(canvasRef.current, {
+      preserveObjectStacking: true,
+    });
     setCanvas(fabricCanvas);
 
-    // Add text to canvas
-    var grid = 50;
-    // create grid
-    for (var i = 0; i < 600 / grid; i++) {
+    // Add grid lines to canvas
+    const grid = 50;
+    for (let i = 0; i < 600 / grid; i++) {
       fabricCanvas.add(
         new fabric.Line([i * grid, 0, i * grid, 600], {
           stroke: '#ccc',
@@ -32,18 +32,13 @@ const FabricComponent = () => {
       );
     }
 
-    // Grid Snapping function
-    fabricCanvas.on('object:moving', function (options) {
-      if (
-        Math.round((options.target.left / grid) * 4) % 4 === 0 &&
-        Math.round((options.target.top / grid) * 4) % 4 === 0
-      ) {
-        options.target
-          .set({
-            left: Math.round(options.target.left / grid) * grid,
-            top: Math.round(options.target.top / grid) * grid,
-          })
-          .setCoords();
+    // Enable grid snapping
+    fabricCanvas.on('object:moving', (options) => {
+      const target = options.target;
+      if (target && target.get('type') === 'i-text') {
+        const left = Math.round(target.left / grid) * grid;
+        const top = Math.round(target.top / grid) * grid;
+        target.set({ left, top }).setCoords();
       }
     });
 
@@ -59,6 +54,7 @@ const FabricComponent = () => {
       });
     }
   }, [canvas]);
+
   useEffect(() => {
     if (canvas) {
       updateBarcode();
@@ -79,47 +75,16 @@ const FabricComponent = () => {
     });
 
     textField.setControlsVisibility({
-      tl: true, // Top-left
-      tr: true, // Top-right
-      br: true, // Bottom-right
-      bl: true, // Bottom-left
-      mtr: true, // Middle-rotation
+      tl: true,
+      tr: true,
+      br: true,
+      bl: true,
+      mtr: true,
     });
 
     canvas.add(textField);
     setTextFields((prevTextFields) => [...prevTextFields, textField]);
     canvas.setActiveObject(textField);
-    canvas.renderAll();
-  };
-
-  const dtEditText = (action) => {
-    const a = action;
-    const o = canvas.getActiveObject();
-    let t;
-
-    // If object selected, what type?
-    if (o) {
-      t = o.get('type');
-    }
-
-    if (o && t === 'i-text') {
-      switch (a) {
-        case 'bold':
-          const isBold = dtGetStyle(o, 'fontWeight') === 'bold';
-          dtSetStyle(o, 'fontWeight', isBold ? '' : 'bold');
-          break;
-
-        case 'italic':
-          const isItalic = dtGetStyle(o, 'fontStyle') === 'italic';
-          dtSetStyle(o, 'fontStyle', isItalic ? '' : 'italic');
-          break;
-
-        case 'underline':
-          const isUnderline = dtGetStyle(o, 'textDecoration') === 'underline';
-          dtSetStyle(o, 'textDecoration', isUnderline ? '' : 'underline');
-          break;
-      }
-    }
     canvas.renderAll();
   };
 
@@ -198,8 +163,9 @@ const FabricComponent = () => {
   const handleAddBarcode = () => {
     updateBarcode();
   };
+
   const updateBarcode = () => {
-    canvas.forEachObject(function (object) {
+    canvas.forEachObject((object) => {
       if (object.type === 'image' && object.source === 'barcode') {
         canvas.remove(object);
       }
@@ -222,18 +188,30 @@ const FabricComponent = () => {
     canvas.renderAll();
   };
 
+  const uploadImage = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+
+      reader.onload = function (e) {
+        const imgObj = new Image();
+        imgObj.src = e.target.result;
+
+        imgObj.onload = () => {
+          const fabricImage = new fabric.Image(imgObj);
+          canvas.add(fabricImage);
+          canvas.renderAll();
+        };
+      };
+
+      reader.readAsDataURL(file);
+    }
+  };
+
   return (
     <div>
       <canvas id="c" width={500} height={500} ref={canvasRef}></canvas>
-      <button onClick={() => dtEditText('underline')} id="btn-underline">
-        Underline
-      </button>
-      <button onClick={() => dtEditText('bold')} id="btn-bold">
-        Bold
-      </button>
-      <button onClick={() => dtEditText('italic')} id="btn-italic">
-        Italic
-      </button>
+
       <button onClick={handleAddTextField}>New Text Field</button>
       <button onClick={handleExportClick}>Export Data</button>
       <button onClick={() => handleStaticTextField('case1')}>Case 1</button>
@@ -246,6 +224,7 @@ const FabricComponent = () => {
         value={barcodeValue}
         onChange={(e) => setBarcodeValue(e.target.value)}
       />
+      <input type="file" accept="image/*" onChange={uploadImage} />
     </div>
   );
 };
